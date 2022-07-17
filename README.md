@@ -1,6 +1,4 @@
-# java-exercises-5
-
-Learning Java:
+# Learning Java part 5:
 
 * abstract classes
 * interfaces
