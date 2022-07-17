@@ -6,3 +6,7 @@ Learning Java:
 * interfaces
 * design patterns
 * functional interfaces
+* lambdas
+* optionals
+* streams
+* date API
