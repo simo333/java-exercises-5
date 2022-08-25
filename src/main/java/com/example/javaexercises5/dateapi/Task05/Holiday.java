@@ -2,22 +2,22 @@ package com.example.javaexercises5.dateapi.Task05;
 
 import java.time.LocalDate;
 
-public class HolidayDay {
+public class Holiday {
     private String localName;
     private LocalDate date;
 
 
-    public HolidayDay(String localName, LocalDate date) {
+    public Holiday(String localName, LocalDate date) {
         this.localName = localName;
         this.date = date;
     }
 
-    public HolidayDay(String localName, String date) {
+    public Holiday(String localName, String date) {
         this.localName = localName;
         setDateFromString(date);
     }
 
-    public HolidayDay() {
+    public Holiday() {
     }
 
     public String getLocalName() {

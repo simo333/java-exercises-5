@@ -15,14 +15,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class HolidayDays {
-    private static final List<HolidayDay> holidayDays = new ArrayList<>();
+public class HolidayService {
+    private final List<Holiday> holidays = new ArrayList<>();
 
-    static {
+    public HolidayService() {
         loadHolidayDays();
     }
 
-    private static void loadHolidayDays() {
+    private void loadHolidayDays() {
         String apiPath = "https://date.nager.at/api/v3/PublicHolidays/" + LocalDate.now().getYear() + "/PL";
         HttpClient httpClient = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder(URI.create(apiPath)).build();
@@ -31,7 +31,7 @@ public class HolidayDays {
             JSONArray jsonArray = new JSONArray(response.body());
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject jsonObject = jsonArray.getJSONObject(i);
-                holidayDays.add(new HolidayDay(jsonObject.getString("localName"),
+                holidays.add(new Holiday(jsonObject.getString("localName"),
                         jsonObject.getString("date")));
             }
         } catch (IOException | InterruptedException | JSONException e) {
@@ -39,19 +39,19 @@ public class HolidayDays {
         }
     }
 
-    public List<HolidayDay> getAllHolidayDays() {
-        return holidayDays;
+    public List<Holiday> getAllHolidayDays() {
+        return holidays;
     }
 
-    public Optional<HolidayDay> getHolidayDayByName(String name) {
-        return holidayDays.stream()
+    public Optional<Holiday> getHolidayDayByName(String name) {
+        return holidays.stream()
                 .filter(h -> name.equals(h.getLocalName()))
                 .findFirst();
     }
 
-    public Optional<HolidayDay> getHolidayDayByDate(LocalDate date) {
-        return holidayDays.stream()
-                .filter(h -> date.isEqual(date))
+    public Optional<Holiday> getHolidayByDate(LocalDate date) {
+        return holidays.stream()
+                .filter(h -> date.isEqual(h.getDate()))
                 .findFirst();
     }
 }

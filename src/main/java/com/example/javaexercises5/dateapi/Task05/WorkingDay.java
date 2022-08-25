@@ -3,18 +3,15 @@ package com.example.javaexercises5.dateapi.Task05;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 
-public class WorkingDayHours {
+public class WorkingDay {
     private DayOfWeek dayOfWeek;
     private LocalTime openTime;
     private LocalTime closeTime;
 
-    public WorkingDayHours(DayOfWeek dayOfWeek, LocalTime openTime, LocalTime closeTime) {
+    public WorkingDay(DayOfWeek dayOfWeek, LocalTime openTime, LocalTime closeTime) {
         this.dayOfWeek = dayOfWeek;
         this.openTime = openTime;
         this.closeTime = closeTime;
-    }
-
-    public WorkingDayHours() {
     }
 
     public DayOfWeek getDayOfWeek() {
@@ -40,4 +37,6 @@ public class WorkingDayHours {
     public void setCloseTime(LocalTime closeTime) {
         this.closeTime = closeTime;
     }
+
+
 }
