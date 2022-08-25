@@ -1,13 +1,10 @@
 package com.example.javaexercises5.dateapi.Task05;
 
 
-import org.springframework.cglib.core.Local;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.*;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Stream;
@@ -42,11 +39,11 @@ public class OpenCloseValidator {
         LocalTime time = dateTime.toLocalTime();
         if (workingDayService.isOpen(dayOfWeek, time)) {
             Duration durationToClose = workingDayService.timeToClose(dayOfWeek, time);
-            System.out.printf("Otwarte. Do zamknięcia zostało %d%n", durationToClose.getSeconds());
+            System.out.println("Otwarte. Do zamknięcia zostało " + secondsToNativeTimeFormat(durationToClose.getSeconds()));
             return;
         }
         Duration durationToClose = workingDayService.timeToClose(dayOfWeek, time);
-        System.out.printf("Zamknięte. Do otwarcia zostało %d%n", durationToClose.getSeconds());
+        System.out.println("Zamknięte. Do otwarcia zostało " + secondsToNativeTimeFormat(durationToClose.getSeconds()));
     }
 
     public void configureWork() {
@@ -103,6 +100,15 @@ public class OpenCloseValidator {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String secondsToNativeTimeFormat(long seconds) {
+        long hours = seconds / 3600;
+        long remainder = seconds - hours * 3600;
+        long mins = remainder / 60;
+        remainder = remainder - mins * 60;
+        long secs = remainder;
+        return hours + " godz. " + mins + " min. " + secs + " sek";
     }
 
 }
