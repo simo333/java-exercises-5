@@ -10,16 +10,31 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public class HolidayService {
     private final List<Holiday> holidays = new ArrayList<>();
+    private final List<LocalDate> tradeSundays = new ArrayList<>();
+    private final HolidaysMode mode;
 
-    public HolidayService() {
-        loadHolidayDays();
+    public enum HolidaysMode {
+        ABSENCE,                    // No holidays at all
+        HOLIDAYS,                   // Respect national days off
+        HOLIDAYS_TRADE_SUNDAYS      // Respect national days off including trade sundays
+    }
+
+    public HolidayService(HolidaysMode mode) {
+        this.mode = mode;
+        switch (mode) {
+            case HOLIDAYS -> loadHolidayDays();
+            case HOLIDAYS_TRADE_SUNDAYS -> loadHolidaysAndTradeSundays();
+        }
     }
 
     private void loadHolidayDays() {
@@ -39,6 +54,15 @@ public class HolidayService {
         }
     }
 
+    private void loadHolidaysAndTradeSundays() {
+        loadHolidayDays();
+        try (Stream<String> lines = Files.lines(Paths.get("src/main/resources/trade_sundays.txt"))) {
+            lines.forEach(line -> tradeSundays.add(LocalDate.parse(line)));
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
     public List<Holiday> getAllHolidayDays() {
         return holidays;
     }
@@ -50,8 +74,19 @@ public class HolidayService {
     }
 
     public Optional<Holiday> getHolidayByDate(LocalDate date) {
+        if(mode == HolidaysMode.ABSENCE) {
+            return Optional.empty();
+        }
         return holidays.stream()
                 .filter(h -> date.isEqual(h.getDate()))
                 .findFirst();
+    }
+
+    public boolean getTradeSundayByDate(LocalDate date) {
+        if(mode != HolidaysMode.HOLIDAYS_TRADE_SUNDAYS) {
+            return false;
+        }
+        return tradeSundays.stream()
+                .anyMatch(date::isEqual);
     }
 }

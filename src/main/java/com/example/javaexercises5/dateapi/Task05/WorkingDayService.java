@@ -8,7 +8,11 @@ import java.util.List;
 
 public class WorkingDayService {
     private final List<WorkingDay> workingDayList = new ArrayList<>();
-    private final HolidayService holidayService = new HolidayService();
+    private final HolidayService holidayService;
+
+    public WorkingDayService(HolidayService holidayService) {
+        this.holidayService = holidayService;
+    }
 
     public WorkingDay getByDayOfWeek(DayOfWeek dayOfWeek) {
         return workingDayList.stream()
@@ -37,12 +41,25 @@ public class WorkingDayService {
         workingDayList.add(new WorkingDay(dayOfWeek, null, null));
     }
 
-    public boolean isOpen(DayOfWeek dayOfWeek, LocalTime time) {
-        WorkingDay day = getByDayOfWeek(dayOfWeek);
+    public boolean isOpen(LocalDateTime dateTime) {
+        if (dateTime.getYear() != LocalDate.now().getYear()) {
+            System.out.println("Podano zły rok");
+            return false;
+        }
+        LocalDate localDate = dateTime.toLocalDate();
+        if (holidayService.getHolidayByDate(localDate).isPresent()) {
+            return false;
+        }
+        if (!holidayService.getTradeSundayByDate(localDate)) {
+            return false;
+        }
+
+        WorkingDay day = getByDayOfWeek(dateTime.getDayOfWeek());
         if (day.getOpenTime() == null || day.getCloseTime() == null) {
             return false;
         }
-        return time.isAfter(day.getOpenTime()) && time.isBefore(day.getCloseTime());
+        LocalTime localTime = dateTime.toLocalTime();
+        return localTime.isAfter(day.getOpenTime()) && localTime.isBefore(day.getCloseTime());
     }
 
     public Duration timeToOpen(LocalDateTime time) {
@@ -55,9 +72,9 @@ public class WorkingDayService {
         return Duration.between(time, workingDay.getOpenTime());
     }
 
-    public Duration timeToClose(DayOfWeek dayOfWeek, LocalTime time) {
-        WorkingDay workingDay = getByDayOfWeek(dayOfWeek);
-        Duration between = Duration.between(time, workingDay.getCloseTime());
+    public Duration timeToClose(LocalDateTime dateTime) {
+        WorkingDay workingDay = getByDayOfWeek(dateTime.getDayOfWeek());
+        Duration between = Duration.between(dateTime.toLocalTime(), workingDay.getCloseTime());
         if (between.isNegative()) {
             between = between.plusDays(1);
         }
@@ -66,11 +83,12 @@ public class WorkingDayService {
 
     public LocalDateTime getClosestWorkingDay(LocalDateTime since) {
         LocalDate closestWorkingDay = since.toLocalDate().plusDays(1);
-        while (holidayService.getHolidayByDate(closestWorkingDay).isPresent() || getByDayOfWeek(closestWorkingDay.getDayOfWeek()).getOpenTime() == null) {
+        while (holidayService.getHolidayByDate(closestWorkingDay).isPresent()
+                || getByDayOfWeek(closestWorkingDay.getDayOfWeek()).getOpenTime() == null
+                || holidayService.getTradeSundayByDate(closestWorkingDay)) {
             closestWorkingDay = closestWorkingDay.plusDays(1);
         }
         return LocalDateTime.of(closestWorkingDay,
                 getByDayOfWeek(closestWorkingDay.getDayOfWeek()).getOpenTime());
     }
-
 }

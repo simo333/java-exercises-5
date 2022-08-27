@@ -4,7 +4,9 @@ package com.example.javaexercises5.dateapi.Task05;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.*;
+import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Scanner;
@@ -12,30 +14,16 @@ import java.util.stream.Stream;
 
 public class OpenCloseValidator {
 
-    private final HolidayService holidayService;
     private final WorkingDayService workingDayService;
-    private boolean doRespectHolidays;
 
-    private OpenCloseValidator() {
-        this.holidayService = new HolidayService();
-        this.workingDayService = new WorkingDayService();
+    private OpenCloseValidator(HolidayService.HolidaysMode mode) {
+        HolidayService holidayService = new HolidayService(mode);
+        this.workingDayService = new WorkingDayService(holidayService);
     }
 
     public void checkOIfOpen(LocalDateTime dateTime) {
-        if (dateTime.getYear() != LocalDate.now().getYear()) {
-            System.out.println("Podano zły rok");
-            return;
-        }
-        if (doRespectHolidays) {
-            if (holidayService.getHolidayByDate(dateTime.toLocalDate()).isPresent()) {
-                System.out.println("Zamknięte z powodu święta.");
-                return;
-            }
-        }
-        DayOfWeek dayOfWeek = dateTime.getDayOfWeek();
-        LocalTime time = dateTime.toLocalTime();
-        if (workingDayService.isOpen(dayOfWeek, time)) {
-            Duration durationToClose = workingDayService.timeToClose(dayOfWeek, time);
+        if (workingDayService.isOpen(dateTime)) {
+            Duration durationToClose = workingDayService.timeToClose(dateTime);
             System.out.println("Otwarte. Do zamknięcia zostało " + secondsToNativeTimeFormat(durationToClose.getSeconds()));
             return;
         }
@@ -49,11 +37,23 @@ public class OpenCloseValidator {
     }
 
     public static OpenCloseValidator builder() {
-        OpenCloseValidator openCloseValidator = new OpenCloseValidator();
+        boolean doRespectHolidays = false;
+        boolean doRespectTradeSundays = false;
         Scanner scanner = new Scanner(System.in);
         System.out.println("Konfiguracja:");
         System.out.print("Instrukcja - Wprowadź 't', 'tak' lub 'n','nie' dla odpowiedzi bezpośrednich.");
         System.out.println("W celu podania godzin otwarcia zastosuj wzór:  gg:mm-gg:mm lub wpisz 'nie', jeśli zamknięte.");
+        System.out.print("Czy przestrzegasz (święta) dni wolne od pracy?: ");
+        String respectHolidays = scanner.nextLine().substring(0, 1);
+        if ("t".equals(respectHolidays)) {
+            doRespectHolidays = true;
+        }
+        System.out.print("Czy przestrzegasz system niedziel handlowych?: ");
+        String respectTradeSundays = scanner.nextLine().substring(0, 1);
+        if ("t".equals(respectTradeSundays)) {
+            doRespectTradeSundays = true;
+        }
+        OpenCloseValidator openCloseValidator = getInstance(doRespectHolidays, doRespectTradeSundays);
         System.out.println("Wprowadź godziny otwarcia.");
         System.out.print("PONIEDZIAŁEK: ");
         openCloseValidator.workingDayService.setWorkingDayOpenHours(DayOfWeek.MONDAY, scanner.nextLine());
@@ -69,41 +69,48 @@ public class OpenCloseValidator {
         openCloseValidator.workingDayService.setWorkingDayOpenHours(DayOfWeek.SATURDAY, scanner.nextLine());
         System.out.print("NIEDZIELA: ");
         openCloseValidator.workingDayService.setWorkingDayOpenHours(DayOfWeek.SUNDAY, scanner.nextLine());
-        System.out.print("Przestrzegasz (święta) dni wolne od pracy?: ");
-        String respectHolidays = scanner.nextLine().substring(0, 1);
-        if ("t".equals(respectHolidays)) {
-            openCloseValidator.doRespectHolidays = true;
-        }
-        if ("n".equals(respectHolidays)) {
-            openCloseValidator.doRespectHolidays = false;
-        }
+
         System.out.println("Konfiguracja zakończona.");
         return openCloseValidator;
     }
 
     public static OpenCloseValidator builder(Path path) {
-        OpenCloseValidator openCloseValidator = new OpenCloseValidator();
         List<DayOfWeek> daysOfWeek = List.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
                 DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);
 
         try (Stream<String> lines = Files.lines(path)) {
             List<String> strings = lines.toList();
-            String respectHolidays = strings.get(strings.size() - 1).substring(0, 1);
-            if ("t".equals(respectHolidays)) {
-                openCloseValidator.doRespectHolidays = true;
+            String respectHolidays = strings.get(0).substring(0, 1);
+            String respectTradeSundays = strings.get(1).substring(0, 1);
+            boolean doRespectHolidays = false;
+            boolean doRespectTradeSundays = false;
+            if ("t".startsWith(respectHolidays)) {
+                doRespectHolidays = true;
             }
-            if ("n".equals(respectHolidays)) {
-                openCloseValidator.doRespectHolidays = false;
+            if ("t".equals(respectTradeSundays)) {
+                doRespectTradeSundays = true;
             }
-            strings = strings.subList(0, strings.size() - 1);
+            OpenCloseValidator openCloseValidator = getInstance(doRespectHolidays, doRespectTradeSundays);
+            strings = strings.subList(2, strings.size());
             for (int i = 0; i < strings.size(); i++) {
                 openCloseValidator.workingDayService.setWorkingDayOpenHours(daysOfWeek.get(i), strings.get(i));
             }
             System.out.println("Konfiguracja zakończona.");
+            return openCloseValidator;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return openCloseValidator;
+    }
+
+    private static OpenCloseValidator getInstance(boolean doRespectHolidays, boolean doRespectTradeSundays) {
+        if (!doRespectHolidays) {
+            return new OpenCloseValidator(HolidayService.HolidaysMode.ABSENCE);
+        }
+        if (doRespectTradeSundays) {
+            return new OpenCloseValidator(HolidayService.HolidaysMode.HOLIDAYS_TRADE_SUNDAYS);
+        }
+        return new OpenCloseValidator(HolidayService.HolidaysMode.HOLIDAYS);
+
     }
 
     private String secondsToNativeTimeFormat(long seconds) {
