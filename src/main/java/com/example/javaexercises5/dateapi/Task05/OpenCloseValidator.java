@@ -42,8 +42,16 @@ public class OpenCloseValidator {
             System.out.println("Otwarte. Do zamknięcia zostało " + secondsToNativeTimeFormat(durationToClose.getSeconds()));
             return;
         }
-        Duration durationToClose = workingDayService.timeToClose(dayOfWeek, time);
-        System.out.println("Zamknięte. Do otwarcia zostało " + secondsToNativeTimeFormat(durationToClose.getSeconds()));
+        Duration durationToOpen = workingDayService.timeToOpen(dateTime);
+        if(durationToOpen.plusHours(time.getHour()).toHours() > 24) {
+            long daysToOpen = 1;
+            while (holidayService.getHolidayByDate(dateTime.plusDays(daysToOpen).toLocalDate()).isPresent()) {
+                daysToOpen++;
+            }
+
+//            durationToOpen = durationToOpen.plusDays(daysToOpen - 1);
+        }
+        System.out.println("Zamknięte. Do otwarcia zostało " + secondsToNativeTimeFormat(durationToOpen.getSeconds()));
     }
 
     public void configureWork() {

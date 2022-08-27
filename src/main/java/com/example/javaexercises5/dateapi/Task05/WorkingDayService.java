@@ -1,9 +1,7 @@
 package com.example.javaexercises5.dateapi.Task05;
 
-import java.time.DayOfWeek;
-import java.time.Duration;
-import java.time.LocalTime;
-import java.time.Period;
+import java.time.*;
+import java.time.chrono.ChronoLocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalUnit;
@@ -12,6 +10,7 @@ import java.util.List;
 
 public class WorkingDayService {
     private final List<WorkingDay> workingDayList = new ArrayList<>();
+    private final HolidayService holidayService = new HolidayService();
 
     public WorkingDay getByDayOfWeek(DayOfWeek dayOfWeek) {
         return workingDayList.stream()
@@ -48,21 +47,24 @@ public class WorkingDayService {
         return time.isAfter(day.getOpenTime()) && time.isBefore(day.getCloseTime());
     }
 
-    public Duration timeToOpen(DayOfWeek dayOfWeek, LocalTime time) {
+    public Duration timeToOpen(LocalDateTime time) {
+        DayOfWeek dayOfWeek = time.getDayOfWeek();
         WorkingDay workingDay = getByDayOfWeek(dayOfWeek);
-        if(time.isAfter(workingDay.getCloseTime())) {
-            DayOfWeek dayAfter = DayOfWeek.of(dayOfWeek.getValue() + 1);
-            return Duration.between(time, getByDayOfWeek(dayAfter).getOpenTime());
+        LocalTime time2 = time.toLocalTime();
+        Duration duration = Duration.between(time2, workingDay.getOpenTime());
+        if(duration.isNegative()) {
+            duration = duration.plusDays(1);
         }
-        if(time.isBefore(workingDay.getOpenTime())) {
-            return Duration.between(time, workingDay.getOpenTime());
-        }
-        throw new IllegalArgumentException("Probably open. For inputs: " + dayOfWeek + ", " + time);
+        return duration;
     }
 
     public Duration timeToClose(DayOfWeek dayOfWeek, LocalTime time) {
         WorkingDay workingDay = getByDayOfWeek(dayOfWeek);
-        return Duration.between(time, workingDay.getCloseTime());
+        Duration between = Duration.between(time, workingDay.getCloseTime());
+        if(between.isNegative()) {
+            between = between.plusDays(1);
+        }
+        return between;
     }
 
 }
