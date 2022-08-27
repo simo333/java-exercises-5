@@ -1,10 +1,8 @@
 package com.example.javaexercises5.dateapi.Task05;
 
 import java.time.*;
-import java.time.chrono.ChronoLocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,21 +48,29 @@ public class WorkingDayService {
     public Duration timeToOpen(LocalDateTime time) {
         DayOfWeek dayOfWeek = time.getDayOfWeek();
         WorkingDay workingDay = getByDayOfWeek(dayOfWeek);
-        LocalTime time2 = time.toLocalTime();
-        Duration duration = Duration.between(time2, workingDay.getOpenTime());
-        if(duration.isNegative()) {
-            duration = duration.plusDays(1);
+        if (time.toLocalTime().isAfter(workingDay.getCloseTime())) {
+            LocalDateTime nextOpenDateTime = getClosestWorkingDay(time);
+            return Duration.between(time, nextOpenDateTime);
         }
-        return duration;
+        return Duration.between(time, workingDay.getOpenTime());
     }
 
     public Duration timeToClose(DayOfWeek dayOfWeek, LocalTime time) {
         WorkingDay workingDay = getByDayOfWeek(dayOfWeek);
         Duration between = Duration.between(time, workingDay.getCloseTime());
-        if(between.isNegative()) {
+        if (between.isNegative()) {
             between = between.plusDays(1);
         }
         return between;
+    }
+
+    public LocalDateTime getClosestWorkingDay(LocalDateTime since) {
+        LocalDate closestWorkingDay = since.toLocalDate().plusDays(1);
+        while (holidayService.getHolidayByDate(closestWorkingDay).isPresent() || getByDayOfWeek(closestWorkingDay.getDayOfWeek()).getOpenTime() == null) {
+            closestWorkingDay = closestWorkingDay.plusDays(1);
+        }
+        return LocalDateTime.of(closestWorkingDay,
+                getByDayOfWeek(closestWorkingDay.getDayOfWeek()).getOpenTime());
     }
 
 }
