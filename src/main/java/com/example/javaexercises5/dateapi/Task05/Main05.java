@@ -7,8 +7,7 @@ public class Main05 {
     public static void main(String[] args) {
         OpenCloseValidator openCloseValidator =
                 OpenCloseValidator.builder(Paths.get("src/main/resources/config.txt"));
-//        openCloseValidator.checkOIfOpen(LocalDateTime.of(2022, 4, 16, 18, 0));
+        openCloseValidator.checkOIfOpen(LocalDateTime.of(2022, 4, 16, 18, 0));
         openCloseValidator.checkOIfOpen(LocalDateTime.now());
-
     }
 }
