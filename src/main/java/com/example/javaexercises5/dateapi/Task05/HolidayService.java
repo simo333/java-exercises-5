@@ -74,7 +74,7 @@ public class HolidayService {
     }
 
     public Optional<Holiday> getHolidayByDate(LocalDate date) {
-        if(mode == HolidaysMode.ABSENCE) {
+        if (mode == HolidaysMode.ABSENCE) {
             return Optional.empty();
         }
         return holidays.stream()
@@ -83,7 +83,7 @@ public class HolidayService {
     }
 
     public boolean getTradeSundayByDate(LocalDate date) {
-        if(mode != HolidaysMode.HOLIDAYS_TRADE_SUNDAYS) {
+        if (mode != HolidaysMode.HOLIDAYS_TRADE_SUNDAYS) {
             return false;
         }
         return tradeSundays.stream()
