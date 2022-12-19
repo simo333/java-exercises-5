@@ -1,4 +1,4 @@
-package com.example.javaexercises5.designpattern.creational.factorymethod;
+package com.example.javaexercises5.designpattern.creational.factorymethod.first;
 
 public abstract class Dialog {
 
